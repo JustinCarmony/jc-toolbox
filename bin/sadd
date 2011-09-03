@@ -1,0 +1,2 @@
+#!/bin/bash
+svn st --ignore-externals | grep ^? | sed 's/\?/svn add/' | sh

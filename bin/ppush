@@ -1,0 +1,143 @@
+#!/bin/bash
+
+function check_git()
+{
+    git status &> /dev/null || return 1;
+    # Send 0, Which is Success
+    return 0;
+}
+
+cur_dir=$(pwd);
+
+echo ""
+echo "*** PRODUCTION MERGE SCRIPT ***"
+
+is_message_set=0
+
+while [ $is_message_set -ne 1 ]
+do
+	echo ""
+	echo "Please enter your message:"
+	read -p "> " commit_message
+	
+	echo ""
+	echo $commit_message
+	
+	echo ""
+	echo "Is This Correct?"
+	read -p "[y/n] " is_good_message
+
+	if [ $is_good_message = "y" ] 
+	then
+		is_message_set=1;
+	fi
+done
+
+commit_message="*** Production Merge *** \n $commit_message"
+
+# use: $(parse_git_branch);
+function parse_git_branch {
+    local branch=$(git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/');
+    echo $branch;
+}
+
+# Do the Production Push for a Directory
+function do_production_push ()
+{
+	cd $1;
+	
+	# Check Their Current Branch
+	local start_branch=$(parse_git_branch);
+	local merge_branch=$start_branch;
+
+	if [ $start_branch = "production" ]
+	then
+		echo "Current Branch IS PRODUCTION";
+		echo "You cannot merge from production to production. Please select another branch.";
+		echo "Leave blank to use master. User \"n\" to abort pushing this branch to production.";
+		read -p "New Branch: " new_branch;
+		
+		# Set Default to Master if new_branch is blank
+		new_branch=${new_branch:-master}
+		
+		if [ $new_branch = "n" ] 
+		then
+			echo "Skipping $i";
+			return 1;
+		else
+			merge_branch=$new_branch;
+		fi
+	elif [ $start_branch != "master" ]
+	then
+		echo "Current Branch IS NOT MASTER";
+		echo "Are you sure you want to merge from a non-master branch?";
+		read -p "[y/n] " use_branch;
+		if [ $use_branch != "y" ]
+		then
+			echo "Do you want to switch to master?";
+			echo "   y - yes, n - skip this branch";
+			read -p "[y/n] " switch_to_master;
+			if [ $switch_to_master == "y" ]
+			then
+				$merge_branch="master";
+			else
+				return 0;
+			fi
+		fi
+	fi
+
+	git branch production origin/production 2>/dev/null
+	git checkout production
+#	git pull origin production
+	git rebase origin/production
+	git merge --no-ff -m "$commit_message" $merge_branch
+	git push origin production
+	if [ $start_branch == "production" ]
+	then
+		start_branch="master";
+	fi
+	git checkout $start_branch;
+	echo ""
+	cd ..;
+}
+
+check_git
+is_git=$?
+if [ $is_git -eq 0 ]
+then
+	do_production_push ./
+	exit 0;
+fi
+
+echo "Push All Directories?"
+read -p "[y/n] " push_all;
+push_all=${push_all:-n}
+
+if [ $push_all != "y" ] 
+then
+	echo ""
+	echo "Pick Which Directories to Push. Default Answer: no"
+	echo ""
+fi
+
+for i in $( ls ./);
+do
+	if [ -d $i ]
+	then
+		if [ $push_all != "y" ]
+		then
+			read -p "Update $i [y/n]:" update_repo
+        	update_repo=${update_repo:-n}
+		else
+			update_repo="y"
+		fi
+
+		if [ $update_repo = "y" ]
+		then
+			do_production_push $i							
+		fi
+	fi
+done
+
+# Go back into the directory where we started.
+cd $cur_dir;

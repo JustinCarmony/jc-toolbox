@@ -1,0 +1,50 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+function git_do_update()
+{
+#    git fetch origin
+	git pull $1 $2
+}
+
+
+# Check to see if this is a git directory
+check_git
+
+# 0 = yes, 1 = no
+# I know, bash is crazy, eh?
+is_git=$?
+
+if [ $is_git -eq 0 ]
+then
+	git checkout production
+	git_do_update $1 $2
+	git checkout master
+else
+	# Loop through the directories
+	for i in $( ls ./);
+	do
+	    if [ -d $i ]
+	    then  
+			cd $i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then		
+				git checkout production
+				echo "Updating $i ("$(git_branch_name)")..."
+				git_do_update $1 $2
+				git checkout master
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+fi

@@ -1,0 +1,39 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+# Check to see if this is a git directory
+check_git
+
+# 0 = yes, 1 = no
+# I know, bash is crazy, eh?
+is_git=$?
+
+if [ $is_git -eq 0 ]
+then
+	echo $(git_branch_name);
+else
+	# Loop through the directories
+	for i in $( ls ./);
+	do
+	    if [ -d $i ]
+	    then  
+			cd $i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then				
+				echo "Current Branch: ("$(git_branch_name)") $i"
+			else
+				echo "Not Git Repo: $i"
+			fi
+			cd ..
+	    fi  
+	done
+	
+fi

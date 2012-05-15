@@ -1,0 +1,73 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+function do_commit()
+{
+	current_branch=$(git_branch_name);
+    if [ $current_branch == "production" ]
+    then
+        echo "Whoa! Trying to commit straight to production!"
+        echo "If you want to do that, you will have to do it manually, not with gpc"
+        echo "Exiting."
+        return 1
+    fi
+    
+    # We are in a Git Repo
+    git add -A
+    git commit -m "$commit_message" && git push
+}
+
+# Get the message
+commit_message=$*
+
+# Prompt for the message while the message length is less than 5 characters
+while [ ${#commit_message} -lt 5 ]
+do
+	if [ ${#commit_message} -gt 0 ]
+	then
+		echo "You need a Commit Message longer than 5 characters:"
+	else
+		echo "Enter Your Commit Message"
+	fi
+
+	read -p "> " commit_message
+	echo ""
+done
+
+# Check to see if this is a git directory
+check_git
+
+# 0 = yes, 1 = no
+# I know, bash is crazy, eh?
+is_git=$?
+
+if [ $is_git -eq 0 ]
+then
+	do_commit
+else
+	# Loop through the directories
+	for i in $( ls ./);
+	do
+	    if [ -d $i ]
+	    then  
+			cd $i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				echo "Committing In $i ..."
+				do_commit
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+	
+fi

@@ -1,0 +1,78 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+checkout_branch="$1"
+
+if [ $1 = "master" ]
+then
+	echo "You cannot delete the master branch"
+	exit 0
+fi
+
+if [ $1 = "production" ]
+then
+	echo "You cannot delete the production branch"
+	exit 0
+fi
+
+function git_do_delete()
+{
+	git checkout master
+	git branch -D $checkout_branch
+	git push
+}
+
+
+# Check to see if this is a git directory
+check_git
+
+# 0 = yes, 1 = no
+# I know, bash is crazy, eh?
+is_git=$?
+
+if [ $is_git -eq 0 ]
+then
+	for i in $( ls ../);
+	do
+	    if [ -d ../$i ]
+	    then  
+			cd ../$i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				echo "Deleting Branch $i ("$(git_branch_name)")..."
+				git_do_delete
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+else
+	# Loop through the directories
+	for i in $( ls ./);
+	do
+	    if [ -d $i ]
+	    then  
+			cd $i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				echo "Checking Out $i ("$(git_branch_name)")..."
+				git_do_delete
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+	
+fi

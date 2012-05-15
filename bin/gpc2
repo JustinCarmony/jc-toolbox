@@ -1,0 +1,29 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+# Loop through the directories
+for i in $( ls /var/www/branches/);
+do
+	if [ -d $i ]
+	then  
+		cd $i
+		for k in $( ls ./ )
+		do
+			cd $k
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				git fetch origin
+				git reset --hard
+			fi
+			cd ..
+		done
+	fi  
+done

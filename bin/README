@@ -1,0 +1,68 @@
+** XMSP Tools Read Me
+
+These are a set of bash scripts that make working with the
+XMSP Git Repositories -MUCH EASIER-, especially since you
+can work side by side with several repos at one time.
+
+=====
+
+gbr - git branchs
+
+Run gbr and it will loop through all the directories and
+output which branch is currently checked out.
+
+=====
+
+gchk <branch_name> - git checkouts
+
+Will loop though all the directories and checkout the
+given branch name. If no branch name is supplied it will 
+default it to master.
+
+=====
+
+gpc <message> - git push commit
+
+If inside a git directory, it will add any new files, 
+commit them to your local repository, and then push
+them to their remote branch.
+
+If not inside a git directory, it will loop through each
+sub directory and test it if it is a git repository. If 
+it is, it will perform the add, commit, push commands.
+If not, it will skip that directory.
+
+If you do not pass it a message, it will prompt for one.
+
+This also will not allow you to commit directly to
+production. It will ask you if you want to checkout
+another branch, such as master.
+
+=====
+
+gpull <origin> <branch> - git pull multiple subdirs
+
+This will loop through your sub directories and pull
+the latest copy from origin. If tracking isn't setup,
+you'll need to pass the origin and branch name you 
+want to pull from.
+
+=====
+
+ppush - production push
+
+It will prompt for a commit message, and will
+automatically append a "*** Production Push ***" to 
+the message.
+
+If you are in a git repository, it will merge the changes
+of your current branch to production and then push your
+production branch to the remote repository.
+
+If you are not in a git repository, it will loop through 
+each subdirectory and perform the production merge and
+push. It will prompt for each directory if you wish to 
+include in the production push. Hitting n or leaving it
+blank will skip that directory.
+
+Justin

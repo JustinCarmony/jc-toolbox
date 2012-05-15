@@ -1,0 +1,7 @@
+# use: $(parse_git_branch);
+function parse_git_branch {
+    local branch=$(git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/');
+    echo $branch;
+}
+
+parse_git_branch

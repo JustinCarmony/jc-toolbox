@@ -1,0 +1,66 @@
+#!/bin/bash
+
+function check_git()
+{
+	git status &> /dev/null || return 1; 
+	# Send 0, Which is Success
+	return 0; 
+}
+
+checkout_branch="$1"
+
+function git_do_checkout()
+{
+	git checkout -b $checkout_branch
+	git push origin $checkout_branch
+	git checkout master
+}
+
+
+# Check to see if this is a git directory
+check_git
+
+# 0 = yes, 1 = no
+# I know, bash is crazy, eh?
+is_git=$?
+
+if [ $is_git -eq 0 ]
+then
+	for i in $( ls ../);
+	do
+	    if [ -d ../$i ]
+	    then  
+			cd ../$i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				echo "Checking Out $i ("$(git_branch_name)")..."
+				git_do_checkout
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+else
+	# Loop through the directories
+	for i in $( ls ./);
+	do
+	    if [ -d $i ]
+	    then  
+			cd $i
+			check_git
+			is_git=$?
+			if [ $is_git -eq 0 ]
+			then
+				echo "Checking Out $i ("$(git_branch_name)")..."
+				git_do_checkout
+			else
+				echo "Skipping $i ..."
+			fi
+			cd ..
+	    fi  
+	done
+	
+fi
